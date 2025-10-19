@@ -1,0 +1,5 @@
+torch>=2.5.1
+torchvision>=0.22.0
+tenseal==0.3.16
+numpy>=2.0.0
+tqdm
