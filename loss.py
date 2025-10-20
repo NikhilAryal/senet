@@ -4,9 +4,6 @@ import torch.nn as nn
 
 def distillation_loss(pr_output, targets, pr_logits, ar_logits, pr_activations, ar_activations, temperature=4.0, alpha=0.5, beta=1.0):
     """
-    Computes the combined distillation loss for training the PR model.
-
-    Args:
         pr_output (Tensor): Output logits from PR model.
         targets (Tensor): Ground truth labels.
         pr_logits (Tensor): Logits from PR model.
@@ -16,9 +13,6 @@ def distillation_loss(pr_output, targets, pr_logits, ar_logits, pr_activations, 
         temperature (float): Temperature for softening logits.
         alpha (float): Weight for cross-entropy loss.
         beta (float): Weight for activation similarity loss.
-
-    Returns:
-        total_loss (Tensor): Combined distillation loss.
     """
     # Cross-entropy loss with ground truth
     ce_loss = nn.CrossEntropyLoss()(pr_output, targets)
