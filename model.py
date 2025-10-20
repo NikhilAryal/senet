@@ -7,33 +7,35 @@ class MaskedReLU(nn.Module):
     def __init__(self, mask):
         super(MaskedReLU, self).__init__()
         self.mask = mask  
-
+        
+# Applying ReLU if the mask is equal to 1
     def forward(self, x):
-        # Apply ReLU only where mask == 1
-        return torch.where(self.mask.bool(), nn.functional.relu(x), x)
-
-
-# Test class to update Resnet , Unused
+        return torch.where(self.mask.bool(), nn.functional.relu(x), x)    
+        
+        
+# custom class to test and update resnet        
 class CustomResNet(nn.Module):
     def __init__(self, base_model, relu_masks):
         super(CustomResNet, self).__init__(block = BasicBlock, layers=[2, 2, 2, 2], num_classes=10)
         self.model = base_model
         self.relu_masks = relu_masks  # Dictionary of layer_name -> mask
 
-        # Replace ReLU layers with masked versions
+        # Replacing ReLU layers with their masked versions
         for name, module in self.model.named_modules():
             if isinstance(module, nn.ReLU):
                 setattr(self.model, name, MaskedReLU())
 
+# we are updating the model manually by passing the masks to each layer 
+
+    
+    
     def forward(self, x):
         '''
-        # You need to pass masks to each MaskedReLU layer manually
-        # This requires modifying the forward method of the base model
-        # Example:
+        Example->
         x = self.model.conv1(x)
         x = self.model.bn1(x)
         x = self.model.relu(x, self.relu_masks['relu'])  # Masked ReLU
-        # Continue forward pass...
+        # Continue 
         return x
 
         '''
@@ -61,7 +63,6 @@ def MaskedReluActivation(x, input, output, mask):
     return torch.where(mask.bool(), nn.ReLU()(x), x)
 
 
-
 def MaskedReluHook(model, input, output, mask):
     for name, module in model.named_modules():
         if isinstance(module, nn.ReLU):
@@ -71,8 +72,7 @@ def MaskedReluHook(model, input, output, mask):
             module.register_forward_hook(hook_with_mask)
     return model
 
-
-# replace relu with mask after training AR model
+# replacing relu with it's mask after training
 def replace_relu_with_masked(model, relu_masks):
     for name, module in model.named_modules():
         if isinstance(module, nn.ReLU):
@@ -85,7 +85,7 @@ def replace_relu_with_masked(model, relu_masks):
 
 def set_module_by_name(model, name, new_module):
     """
-    Replace a module in a PyTorch model by its dotted name.
+    Replacing modules with its dotted name.
 
     Args:
         model (nn.Module): The model containing the module.

@@ -6,7 +6,6 @@ def initialize_relu_mask(activation_shape, relu_budget):
     # mask = torch.zeros(activation_shape, dtype=torch.uint8)
     # indices = torch.randperm(mask.numel())[:relu_budget]
     # mask.view(-1)[indices] = 1
-    # return mask
 
     total_positions = torch.prod(torch.tensor(activation_shape))
     mask = torch.zeros(total_positions, dtype=torch.uint8)
@@ -14,8 +13,7 @@ def initialize_relu_mask(activation_shape, relu_budget):
     mask[indices] = 1
     return mask.view(activation_shape)
 
-
-# update mask tensor as Senet is trained
+# update mask tensor as Senet is being trained
 def update_relu_mask(pr_activations, ar_activations, relu_budget):
     diff = (pr_activations - ar_activations).abs()
     flat_diff = diff.view(-1)
@@ -48,6 +46,7 @@ def update_relu_mask_nodict(pr_activations, ar_activations, relu_budget):
 
     return updated_masks
 
+# will apply masks on each 
 def apply_relu_with_mask(x, mask):
     return torch.where(mask.bool(), nn.ReLU()(x), x)
 
