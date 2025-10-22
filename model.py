@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 from torchvision.models.resnet import ResNet, BasicBlock
-from mask import inject_mask, LocalMask
 
 class MaskedReLU(nn.Module):
     def __init__(self, mask):
@@ -63,14 +62,14 @@ def MaskedReluActivation(x, input, output, mask):
     return torch.where(mask.bool(), nn.ReLU()(x), x)
 
 
-def MaskedReluHook(model, input, output, mask):
-    for name, module in model.named_modules():
-        if isinstance(module, nn.ReLU):
-            print(f"Module name: {name}")
-            layer_mask = mask[name]
-            hook_with_mask = inject_mask(layer_mask)(MaskedReluActivation)
-            module.register_forward_hook(hook_with_mask)
-    return model
+# def MaskedReluHook(model, input, output, mask):
+#     for name, module in model.named_modules():
+#         if isinstance(module, nn.ReLU):
+#             print(f"Module name: {name}")
+#             layer_mask = mask[name]
+#             hook_with_mask = inject_mask(layer_mask)(MaskedReluActivation)
+#             module.register_forward_hook(hook_with_mask)
+#     return model
 
 # replacing relu with it's mask after training
 def replace_relu_with_masked(model, relu_masks):
