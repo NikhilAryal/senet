@@ -16,6 +16,7 @@ def compute_relu_sensitivity(model, val_loader, original_accuracy):
     sensitivity_scores = {}
     for name, module in model.named_modules():
         if isinstance(module, nn.ReLU):
+            print(f"Evaluating sensitivity for layer: {name}")
             # Backup original ReLU
             original_relu = module.forward
 
@@ -23,13 +24,15 @@ def compute_relu_sensitivity(model, val_loader, original_accuracy):
             module.forward = lambda x: x
 
             # Evaluate model
-            _ ,accuracy = eval_subset(model, val_loader, criterion=torch.nn.CrossEntropyLoss(), device='cpu')
+            _ ,accuracy = eval_subset(model, val_loader, criterion=torch.nn.CrossEntropyLoss(), 
+                                      device=torch.device('mps' if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"), 
+                                      subset_size=1000)
             print(f"Sensitivity of {name}: {original_accuracy - accuracy:.4f}")
             sensitivity_scores[name] = abs(original_accuracy - accuracy)
 
             # Restore original ReLU
             module.forward = original_relu
-
+        
     return sensitivity_scores
 
 

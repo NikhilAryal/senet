@@ -24,7 +24,7 @@ class CustomResNet(nn.Module):
             if isinstance(module, nn.ReLU):
                 setattr(self.model, name, MaskedReLU())
 
-# we are updating the model manually by passing the masks to each layer 
+    # we are updating the model manually by passing the masks to each layer 
 
     
     

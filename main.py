@@ -111,9 +111,12 @@ def main():
         if epoch % 2 == 0:
             save_model(model_pr, f"model/model_pr/pr_50_epoch_{epoch+1}.pth")
     '''
-    train_base_model()
-    train_senet()
-    test_senet_model()
+    # train_base_model()
+    # train_senet()
+    # test_senet_model()
+    # train_base_vgg16()
+    # train_base_inception()
+    train_senet_inception()
 
 
 def train_senet():
@@ -255,7 +258,190 @@ def train_base_model():
             save_model(model, f"model/model_epoch_{epoch+1}.pth")
 
 
+def train_base_inception():
+    # pass
+    # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device("mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Using device: {device}")
 
+    #   Resize to 32x32 for VGG
+    transform = transforms.Compose([
+        transforms.Resize((224, 224)), 
+        transforms.ToTensor(),
+        transforms.Normalize((0.1307,), (0.3081,)) 
+    ])
+
+    train_dataset = torchvision.datasets.MNIST(root='./data', train=True, download=True, transform=transform)
+    test_dataset = torchvision.datasets.MNIST(root='./data', train=False, download=True, transform=transform)
+
+    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=64, shuffle=True)
+    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=64, shuffle=False)
+
+    # Modify First Layer (Input): Change 3 channels -> 1 channel
+    # In torchvision's GoogLeNet, conv1 is a 'BasicConv2d' block, and the actual conv is 'conv'
+    # model = torchvision.models.googlenet(weights=torchvision.models.GoogLeNet_Weights.DEFAULT)
+    # model.aux_logits = False  # Disable auxiliary classifiers
+    # model.transform_input = False
+    # model.conv1.conv = nn.Conv2d(in_channels=1, out_channels=64, 
+    #                             kernel_size=7, stride=2, padding=3, bias=False)
+
+    # # Modify Last Layer (Output): Change 1000 classes -> 10 classes
+    # model.fc = nn.Linear(in_features=1024, out_features=10)
+
+    # model = model.to(device)
+
+    # 4. Training Pipeline
+    # criterion = nn.CrossEntropyLoss()
+    # optimizer = optim.Adam(model.parameters(), lr=0.001)
+
+    model = torchvision.models.vgg16(weights=torchvision.models.VGG16_Weights.DEFAULT)
+
+    # Modify First Layer (Input): Change 3 channels -> 1 channel
+    # Original: Conv2d(3, 64, kernel_size=(3, 3), ...)
+    model.features[0] = nn.Conv2d(in_channels=1, out_channels=64, 
+                                kernel_size=3, padding=1)
+
+    # Modify Last Layer (Output): Change 1000 classes -> 10 classes
+    # Access the classifier sequential block (index 6 is the final linear layer)
+    model.classifier[6] = nn.Linear(in_features=4096, out_features=10)
+
+    model = model.to(device)
+
+    # 4. Training Pipeline
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.9)
+
+    model.train()
+    for epoch in range(15):
+        correct = 0
+        total = 0
+        
+        for batch_idx, (data, target) in enumerate(train_loader):
+            data, target = data.to(device), target.to(device)
+            
+            optimizer.zero_grad()
+            outputs = model(data)
+            loss = criterion(outputs, target)
+            loss.backward()
+            optimizer.step()
+            
+            _, predicted = torch.max(outputs.data, 1)
+            total += target.size(0)
+            correct += (predicted == target).sum().item()
+            
+            if batch_idx % 100 == 0:
+                print(f"Epoch {epoch+1} [{batch_idx * len(data)}/{len(train_loader.dataset)}] "
+                      f"Loss: {loss.item():.4f} | Acc: {100 * correct / total:.2f}%")
+        
+        avg_loss, accuracy = evaluate(model, test_loader, criterion, device)
+        print(f"Epoch {epoch}: Accuracy = {accuracy:.2f}%")
+
+        if epoch % 10 == 0:
+            save_model(model, f"model/model_inception_epoch_{epoch+1}.pth")
+
+
+def train_senet_inception():
+    device = torch.device("mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Using device: {device}")
+
+    #   Resize to 32x32 for VGG
+    transform = transforms.Compose([
+        transforms.Resize((32, 32)), 
+        transforms.ToTensor(),
+        transforms.Normalize((0.1307,), (0.3081,)) 
+    ])
+
+    train_dataset = torchvision.datasets.MNIST(root='./data', train=True, download=True, transform=transform)
+    test_dataset = torchvision.datasets.MNIST(root='./data', train=False, download=True, transform=transform)
+
+    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=64, shuffle=True)
+    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=64, shuffle=False)
+
+    # Modify First Layer (Input): Change 3 channels -> 1 channel
+    # In torchvision's GoogLeNet, conv1 is a 'BasicConv2d' block, and the actual conv is 'conv'
+    # model = torchvision.models.googlenet(weights=torchvision.models.GoogLeNet_Weights.DEFAULT)
+    # model.aux_logits = False  # Disable auxiliary classifiers
+    # model.transform_input = False
+    # model.conv1.conv = nn.Conv2d(in_channels=1, out_channels=64, 
+    #                             kernel_size=7, stride=2, padding=3, bias=False)
+
+    # # Modify Last Layer (Output): Change 1000 classes -> 10 classes
+    # model.fc = nn.Linear(in_features=1024, out_features=10)
+
+    # model = model.to(device)
+
+    # # 4. Training Pipeline
+    # criterion = nn.CrossEntropyLoss()
+    # optimizer = optim.Adam(model.parameters(), lr=0.001)
+
+    model = torchvision.models.vgg16(weights=torchvision.models.VGG16_Weights.DEFAULT)
+
+    # Modify First Layer (Input): Change 3 channels -> 1 channel
+    # Original: Conv2d(3, 64, kernel_size=(3, 3), ...)
+    model.features[0] = nn.Conv2d(in_channels=1, out_channels=64, 
+                                kernel_size=3, padding=1)
+
+    # Modify Last Layer (Output): Change 1000 classes -> 10 classes
+    # Access the classifier sequential block (index 6 is the final linear layer)
+    model.classifier[6] = nn.Linear(in_features=4096, out_features=10)
+
+    model = model.to(device)
+
+    # 4. Training Pipeline
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.9)
+
+    avg_loss, accuracy = evaluate(model, test_loader, criterion, device)
+
+    sensitivity_scores = compute_relu_sensitivity(model, test_loader, accuracy)
+    print('Sensitivity score:\n', sensitivity_scores)
+    print()
+    Total_ReLU_Budget = 50000
+    relu_allocation = allocate_relu_budget(sensitivity_scores, Total_ReLU_Budget)
+    print('ReLU allocation:\n', relu_allocation)
+    print()
+
+    # Training with distillation loss and ReLU masks
+    model_pr = load_model(model, './model/model_vgg16_epoch_1.pth', device)
+
+    shape = get_activation_shapes(model_pr, torch.randn(1, 1, 32, 32).to(device))
+    relu_masks = {
+        layer_name: initialize_relu_mask(shape[layer_name], relu_allocation[layer_name])
+        for layer_name in relu_allocation
+    }
+
+    replace_relu_with_masked(model_pr, relu_masks)
+    for epoch in range(10):
+        model_pr.train()
+        model.eval()
+        print(f"Epoch {epoch+1}")
+        for inputs, targets in train_loader:
+            inputs, targets = inputs.to(device), targets.to(device)
+
+            ar_outputs, ar_activations = forward_with_activations(model, inputs)
+            pr_outputs, pr_activations = forward_with_activations(model_pr, inputs)
+
+            # Compute distillation loss
+            loss = distillation_loss(
+                    pr_outputs, targets,
+                    pr_logits=pr_outputs,
+                    ar_logits=ar_outputs,
+                    pr_activations=pr_activations,
+                    ar_activations=ar_activations
+                )
+
+            # Backpropagation
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+            # Update masks based on activation differences
+            relu_masks = update_relu_mask_nodict(pr_activations, ar_activations, Total_ReLU_Budget)
+
+        if (epoch+1) % 5 == 0:
+            save_model(model_pr, f"model/model_pr/model_inception_pr_10_epoch_{epoch+1}.pth")
+
+# utils
 def save_model(model, path):
     torch.save(model.state_dict(), path)
     print(f"Model saved to {path}")
