@@ -1,2 +1,9 @@
-torch==2.9.0
-torchvision==0.24.0
+# torch==2.9.0
+# torchvision==0.24.0
+
+torch>=2.5.1
+torchvision>=0.22.0
+tenseal==0.3.16
+numpy>=2.0.0
+tqdm
+crypten

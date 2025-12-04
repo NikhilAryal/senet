@@ -123,35 +123,36 @@ def main():
     parser = argparse.ArgumentParser(
         description="Measure average inference time of ResNet-18 on CIFAR-10 using a .pth weights file."
     )
-    parser.add_argument("weights_path", type=str, help="Path to the .pth weights file")
-    parser.add_argument("data_root", type=str, help="Root directory of CIFAR-10 dataset")
-
+    # parser.add_argument("weights_path", type=str, help="Path to the .pth weights file", default="./model/model_epoch_21.pth")
+    # parser.add_argument("data_root", type=str, help="Root directory of CIFAR-10 dataset", default="./data")
+    weights_path = "./model/model_pr/pr_50_epoch_7.pth"
+    data_root = "./data"
     # Optional args (you can ignore these if you want strictly 2 arguments)
-    parser.add_argument("--batch_size", type=int, default=128, help="Batch size for inference")
-    parser.add_argument("--num_workers", type=int, default=4, help="Number of DataLoader workers")
-    parser.add_argument(
-        "--device",
-        type=str,
-        default="cuda" if torch.cuda.is_available() else "cpu",
-        help='Device to use: "cuda" or "cpu"',
-    )
+    # parser.add_argument("--batch_size", type=int, default=128, help="Batch size for inference")
+    # parser.add_argument("--num_workers", type=int, default=4, help="Number of DataLoader workers")
+    # parser.add_argument(
+    #     "--device",
+    #     type=str,
+    #     default="cuda" if torch.cuda.is_available() else "cpu",
+    #     help='Device to use: "cuda" or "cpu"',
+    # )
 
     args = parser.parse_args()
 
-    device = torch.device(args.device)
+    device = torch.device('cpu')
 
     print(f"Using device: {device}")
 
     # Build model and load weights
     model = build_resnet18_cifar10(num_classes=10)
-    model = load_weights(model, args.weights_path, device)
+    model = load_weights(model, weights_path, device)
     print("Model and weights loaded successfully.")
 
     # Data loader
     test_loader = get_cifar10_test_loader(
-        data_root=args.data_root,
-        batch_size=args.batch_size,
-        num_workers=args.num_workers,
+        data_root=data_root,
+        batch_size=64,
+        num_workers=2,
     )
     print(f"Test dataset size: {len(test_loader.dataset)} images")
 
